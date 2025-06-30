@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting AI Processor - KIU Consulting</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Meeting AI Processor</h1>
+            <p>Transform meeting recordings into actionable insights</p>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section id="upload-section" class="card">
+                <h2>📁 Upload Meeting Recording</h2>
+                <div class="upload-area" id="upload-area" style="border: 3px dashed #2196F3; background: #f0f8ff; cursor: pointer;">
+                    <input type="file" id="file-input" accept=".mp3,.wav,.m4a" hidden>
+                    <div class="upload-content" style="padding: 30px; text-align: center;">
+                        <div class="upload-icon" style="font-size: 48px; margin-bottom: 10px;">📤</div>
+                        <p style="font-size: 18px; font-weight: bold; color: #1976D2;">Drag & drop your meeting recording or <span class="upload-link" style="color: #FF5722; text-decoration: underline; cursor: pointer;">click to browse</span></p>
+                        <small style="color: #666;">Supported: MP3, WAV, M4A (max 25MB)</small>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; text-align: center;">
+                    <button onclick="document.getElementById('file-input').click()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">🗂️ Test File Browser</button>
+                </div>
+                <div id="upload-progress" class="progress-bar" style="display: none;">
+                    <div class="progress-fill"></div>
+                </div>
+                <button id="process-btn" class="btn btn-primary" style="display: none;">Process Meeting</button>
+            </section>
+
+            <!-- Processing Status -->
+            <section id="processing-section" class="card" style="display: none;">
+                <h2>⚡ Processing Meeting</h2>
+                <div class="processing-steps">
+                    <div class="step" id="step-transcribe">
+                        <div class="step-icon">🎵</div>
+                        <div class="step-text">Transcribing audio...</div>
+                        <div class="step-status">⏳</div>
+                    </div>
+                    <div class="step" id="step-analyze">
+                        <div class="step-icon">🧠</div>
+                        <div class="step-text">Analyzing content...</div>
+                        <div class="step-status">⏳</div>
+                    </div>
+                    <div class="step" id="step-search">
+                        <div class="step-icon">🔍</div>
+                        <div class="step-text">Creating searchable index...</div>
+                        <div class="step-status">⏳</div>
+                    </div>
+                    <div class="step" id="step-visual">
+                        <div class="step-icon">🎨</div>
+                        <div class="step-text">Generating visual summary...</div>
+                        <div class="step-status">⏳</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results-section" class="card" style="display: none;">
+                <h2>📊 Meeting Analysis Results</h2>
+                <div class="results-grid">
+                    <div class="result-card">
+                        <h3>📝 Summary</h3>
+                        <div id="meeting-summary" class="content-area"></div>
+                    </div>
+                    <div class="result-card">
+                        <h3>✅ Action Items</h3>
+                        <div id="action-items" class="content-area"></div>
+                    </div>
+                    <div class="result-card">
+                        <h3>🎯 Key Decisions</h3>
+                        <div id="key-decisions" class="content-area"></div>
+                    </div>
+                    <div class="result-card">
+                        <h3>🎨 Visual Summary</h3>
+                        <div id="visual-summary" class="content-area">
+                            <img id="visual-image" style="display: none; max-width: 100%; border-radius: 8px;" alt="Meeting Visual Summary">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Advanced Features Section -->
+            <section id="advanced-features" class="card">
+                <h2>🚀 Advanced Features</h2>
+                
+                <!-- Real-time Transcription -->
+                <div class="feature-group">
+                    <h3>🎤 Real-time Transcription</h3>
+                    <p>Start live meeting transcription and analysis</p>
+                    <div class="feature-buttons">
+                        <button id="start-realtime-btn" class="btn btn-success">Start Live Transcription</button>
+                        <button id="stop-realtime-btn" class="btn btn-danger" style="display: none;">Stop Transcription</button>
+                    </div>
+                </div>
+
+                <!-- Integration Features -->
+                <div class="feature-group">
+                    <h3>🔗 Calendar & Task Integration</h3>
+                    <p>Generate calendar events and task assignments from meeting analysis</p>
+                    <div class="feature-buttons">
+                        <button id="create-calendar-btn" class="btn btn-info">Create Calendar Events</button>
+                        <button id="create-tasks-btn" class="btn btn-warning">Create Task Assignments</button>
+                    </div>
+                </div>
+
+                <!-- Cross-Meeting Insights -->
+                <div class="feature-group">
+                    <h3>📊 Cross-Meeting Analytics</h3>
+                    <p>Discover patterns and insights across all your meetings</p>
+                    <div class="feature-buttons">
+                        <button id="get-insights-btn" class="btn btn-primary">Get Insights</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search Section -->
+            <section id="search-section" class="card">
+                <h2>🔍 Search Meetings</h2>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search across all meetings...">
+                    <button id="search-btn" class="btn btn-secondary">Search</button>
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </section>
+
+            <!-- Meetings List -->
+            <section id="meetings-section" class="card">
+                <h2>📚 Previous Meetings</h2>
+                <div id="meetings-list" class="meetings-list">
+                    <p class="no-meetings">No meetings processed yet. Upload your first meeting recording above!</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 KIU Consulting - Meeting AI Processor</p>
+        </footer>
+
+        <!-- Error Modal -->
+        <div id="error-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>❌ Error</h3>
+                <p id="error-message"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}?v={{ range(1, 10000) | random }}"></script>
+</body>
+</html>
