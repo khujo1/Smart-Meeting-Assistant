@@ -1,6 +1,7 @@
 class MeetingProcessor {
     constructor() {
         console.log('MeetingProcessor starting...');
+        console.log('Document ready state:', document.readyState);
         this.currentFile = null;
         this.currentSelectedMeetingId = null;
         
@@ -28,72 +29,48 @@ class MeetingProcessor {
         console.log('Setting up upload handlers...');
         
         // Get elements
-        let fileInput = document.getElementById('file-input');
-        let uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const uploadArea = document.getElementById('upload-area');
         const processBtn = document.getElementById('process-btn');
+
+        console.log('Upload elements:', {
+            fileInput: fileInput ? 'found' : 'not found',
+            uploadArea: uploadArea ? 'found' : 'not found',
+            processBtn: processBtn ? 'found' : 'not found'
+        });
 
         if (!fileInput || !uploadArea) {
             console.error('Required upload elements not found');
             return;
         }
 
-        console.log('Upload elements found:', { fileInput: !!fileInput, uploadArea: !!uploadArea });
+        // Store original upload area content ONLY if not already stored
+        if (!this.originalUploadContent) {
+            this.originalUploadContent = uploadArea.innerHTML;
+            console.log('Original upload content stored');
+        }
 
-        // Create a completely new file input to avoid any conflicts
-        const newFileInput = document.createElement('input');
-        newFileInput.type = 'file';
-        newFileInput.id = 'file-input-new';
-        newFileInput.accept = '.mp3,.wav,.m4a';
-        newFileInput.style.display = 'none';
-        
-        // Replace the old file input
-        fileInput.parentNode.replaceChild(newFileInput, fileInput);
-        fileInput = newFileInput;
-
-        // Clear any existing event listeners and add new ones
+        // Remove any existing event listeners to prevent duplicates
         const newUploadArea = uploadArea.cloneNode(true);
         uploadArea.parentNode.replaceChild(newUploadArea, uploadArea);
-        uploadArea = newUploadArea;
+        
+        // Get the new elements after cloning
+        const freshFileInput = document.getElementById('file-input');
+        const freshUploadArea = document.getElementById('upload-area');
 
-        // Make upload area extremely obvious and clickable
-        uploadArea.style.cursor = 'pointer';
-        uploadArea.style.border = '4px dashed #FF0000';
-        uploadArea.style.background = '#FFEEEE';
-        uploadArea.style.padding = '20px';
-        uploadArea.style.minHeight = '150px';
-        uploadArea.style.display = 'flex';
-        uploadArea.style.alignItems = 'center';
-        uploadArea.style.justifyContent = 'center';
-        uploadArea.innerHTML = `
-            <div style="text-align: center;">
-                <div style="font-size: 48px; margin-bottom: 10px;">📤⬆️📂</div>
-                <div style="font-size: 24px; font-weight: bold; color: #FF0000; margin-bottom: 10px;">CLICK HERE TO UPLOAD!</div>
-                <div style="font-size: 18px; color: #FF5722;">Or drag and drop your audio file</div>
-                <div style="font-size: 14px; color: #666; margin-top: 10px;">MP3, WAV, M4A (max 25MB)</div>
-            </div>
-        `;
-
-        // Multiple event listeners for maximum compatibility
-        const triggerFileInput = (e) => {
-            console.log('UPLOAD AREA CLICKED! Event:', e.type, e.target);
+        // Simple direct click handler for upload area
+        freshUploadArea.addEventListener('click', (e) => {
+            console.log('Upload area clicked directly');
             e.preventDefault();
             e.stopPropagation();
-            console.log('Triggering file input click...');
-            fileInput.click();
+            console.log('About to trigger file input click...');
+            freshFileInput.click();
             console.log('File input click triggered');
-        };
-
-        // Add multiple event types
-        uploadArea.addEventListener('click', triggerFileInput, true);
-        uploadArea.addEventListener('mousedown', triggerFileInput, true);
-        uploadArea.addEventListener('touchstart', triggerFileInput, true);
-        
-        // Also add onclick directly
-        uploadArea.onclick = triggerFileInput;
+        });
 
         // File selection handler
-        fileInput.addEventListener('change', (e) => {
-            console.log('File selected:', e.target.files[0]);
+        freshFileInput.addEventListener('change', (e) => {
+            console.log('File input change event:', e.target.files[0]);
             if (e.target.files[0]) {
                 this.handleFileSelect(e);
             }
@@ -101,36 +78,59 @@ class MeetingProcessor {
 
         // Process button handler
         if (processBtn) {
-            processBtn.addEventListener('click', () => {
+            // Remove existing listeners
+            const newProcessBtn = processBtn.cloneNode(true);
+            processBtn.parentNode.replaceChild(newProcessBtn, processBtn);
+            
+            newProcessBtn.addEventListener('click', () => {
                 console.log('Process button clicked');
                 this.processFile();
             });
         }
 
-        // Add a test button as backup
-        const testButton = document.createElement('button');
-        testButton.innerText = '🚨 EMERGENCY FILE PICKER 🚨';
-        testButton.style.cssText = `
-            background: #FF4444; 
-            color: white; 
-            border: none; 
-            padding: 15px 25px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: bold;
-            margin: 10px;
-            display: block;
-            width: 100%;
-        `;
-        testButton.onclick = () => {
-            console.log('Emergency button clicked!');
-            fileInput.click();
-        };
-        
-        uploadArea.parentNode.insertBefore(testButton, uploadArea.nextSibling);
+        // Add drag and drop functionality
+        freshUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            freshUploadArea.style.background = '#e3f2fd';
+            console.log('Drag over');
+        });
 
-        console.log('Upload handlers set up successfully with multiple fallbacks');
+        freshUploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            freshUploadArea.style.background = '#f0f8ff';
+            console.log('Drag leave');
+        });
+
+        freshUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            freshUploadArea.style.background = '#f0f8ff';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                console.log('File dropped:', files[0].name);
+                freshFileInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                freshFileInput.dispatchEvent(event);
+            }
+        });
+
+        // Also handle the visible file input as backup
+        const visibleFileInput = document.getElementById('visible-file-input');
+        if (visibleFileInput) {
+            visibleFileInput.addEventListener('change', (e) => {
+                console.log('Visible file input changed:', e.target.files[0]);
+                if (e.target.files[0]) {
+                    // Copy the file to the hidden input
+                    freshFileInput.files = e.target.files;
+                    this.handleFileSelect(e);
+                }
+            });
+        }
+
+        console.log('Upload handlers set up successfully');
     }
 
     handleFileSelect(event) {
@@ -154,20 +154,22 @@ class MeetingProcessor {
 
         this.currentFile = file;
         
-        // Update UI
+        // Update UI but preserve click functionality through event delegation
         const uploadArea = document.getElementById('upload-area');
         if (uploadArea) {
             uploadArea.innerHTML = `
-                <div class="file-selected">
-                    <div class="file-icon">🎵</div>
+                <div class="file-selected" style="padding: 30px; text-align: center; cursor: pointer;">
+                    <div class="file-icon" style="font-size: 48px; margin-bottom: 10px;">🎵</div>
                     <div class="file-info">
-                        <p class="file-name">${file.name}</p>
-                        <p class="file-size">${this.formatFileSize(file.size)}</p>
+                        <p class="file-name" style="font-size: 18px; font-weight: bold; color: #1976D2;">${file.name}</p>
+                        <p class="file-size" style="color: #666;">${this.formatFileSize(file.size)}</p>
+                        <small style="color: #FF5722; text-decoration: underline;">Click to change file</small>
                     </div>
                 </div>
             `;
         }
-        
+
+        // Show process button
         const processBtn = document.getElementById('process-btn');
         if (processBtn) {
             processBtn.style.display = 'block';
@@ -190,28 +192,64 @@ class MeetingProcessor {
 
         console.log('Processing file:', this.currentFile.name);
 
+        // Show processing indicator
+        const processBtn = document.getElementById('process-btn');
+        if (processBtn) {
+            processBtn.disabled = true;
+            processBtn.innerHTML = 'Processing... <div class="spinner"></div>';
+        }
+
         const formData = new FormData();
         formData.append('file', this.currentFile);
 
         try {
-            const response = await fetch('/upload', {
+            // Step 1: Upload the file
+            console.log('Step 1: Uploading file...');
+            const uploadResponse = await fetch('/upload', {
                 method: 'POST',
                 body: formData
             });
 
-            const data = await response.json();
-            console.log('Upload response:', data);
+            const uploadData = await uploadResponse.json();
+            console.log('Upload response:', uploadData);
 
-            if (data.success) {
-                alert('File processed successfully!');
+            if (!uploadData.success) {
+                throw new Error(uploadData.error || 'Upload failed');
+            }
+
+            // Step 2: Process the uploaded file
+            console.log('Step 2: Processing uploaded file...');
+            const processResponse = await fetch(`/process/${uploadData.filename}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: `Meeting - ${this.currentFile.name}`,
+                    attendees: []
+                })
+            });
+
+            const processData = await processResponse.json();
+            console.log('Process response:', processData);
+
+            if (processData.success) {
+                alert('File processed successfully! Check the meetings list below.');
                 this.loadMeetings(); // Refresh meetings list
                 this.resetUploadSection();
             } else {
-                alert('Processing failed: ' + (data.error || 'Unknown error'));
+                throw new Error(processData.error || 'Processing failed');
             }
+
         } catch (error) {
-            console.error('Upload error:', error);
-            alert('Upload failed: ' + error.message);
+            console.error('Processing error:', error);
+            alert('Processing failed: ' + error.message);
+        } finally {
+            // Reset button state
+            if (processBtn) {
+                processBtn.disabled = false;
+                processBtn.innerHTML = 'Process Meeting';
+            }
         }
     }
 
@@ -560,11 +598,39 @@ class MeetingProcessor {
         
         this.currentFile = null;
         
-        // Re-setup upload handlers after resetting
+        // Re-setup upload handlers after resetting HTML
         this.setupUploadHandlers();
+    }
+
+    resetUploadArea() {
+        const uploadArea = document.getElementById('upload-area');
+        if (uploadArea && this.originalUploadContent) {
+            uploadArea.innerHTML = this.originalUploadContent;
+        }
+        this.currentFile = null;
+        
+        // Hide process button
+        const processBtn = document.getElementById('process-btn');
+        if (processBtn) {
+            processBtn.style.display = 'none';
+        }
     }
 }
 
+// Global test function for debugging
+window.testFilePicker = function() {
+    console.log('Test file picker called');
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+        console.log('File input found, triggering click...');
+        fileInput.click();
+        console.log('Click triggered');
+    } else {
+        console.log('File input NOT found');
+    }
+};
+
 // Initialize the application
+console.log('app.js loaded successfully!');
 console.log('Initializing meeting processor...');
 const meetingProcessor = new MeetingProcessor();
